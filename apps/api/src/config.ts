@@ -24,6 +24,12 @@ export const config = {
 
   /** Caminho do binário yt-dlp. Default resolve via PATH. */
   ytDlpPath: process.env.YT_DLP_PATH ?? "yt-dlp",
+  /**
+   * Arquivo de cookies (formato Netscape) para autenticar no YouTube.
+   * Necessário quando o servidor roda em IP de datacenter — o YouTube exige
+   * "Sign in to confirm you're not a bot". Opcional em IP residencial.
+   */
+  cookiesFile: process.env.YT_DLP_COOKIES || undefined,
 
   /** Em produção, a API também serve o PWA buildado (mesma origem). */
   serveWeb: process.env.SERVE_WEB === "true",

@@ -20,8 +20,13 @@ const ytdlpExec = create(config.ytDlpPath);
 
 type YtFlags = Record<string, unknown>;
 
+/** Acrescenta o arquivo de cookies às flags, quando configurado. */
+function withCookies(flags: YtFlags): YtFlags {
+  return config.cookiesFile ? { ...flags, cookies: config.cookiesFile } : flags;
+}
+
 async function raw(url: string, flags: YtFlags): Promise<string> {
-  const res = (await ytdlpExec(url, flags)) as unknown;
+  const res = (await ytdlpExec(url, withCookies(flags))) as unknown;
   if (typeof res === "string") return res;
   if (res && typeof res === "object" && "stdout" in res) {
     return String((res as { stdout: unknown }).stdout ?? "");
@@ -121,14 +126,17 @@ export async function downloadToTemp(videoId: string, format: string): Promise<s
   await cleanupTemp(videoId);
 
   const outputTemplate = path.join(config.tmpDir, `${videoId}.%(ext)s`);
-  await ytdlpExec(watchUrl(videoId), {
-    format,
-    output: outputTemplate,
-    noPlaylist: true,
-    noWarnings: true,
-    noPart: true,
-    retries: 3,
-  });
+  await ytdlpExec(
+    watchUrl(videoId),
+    withCookies({
+      format,
+      output: outputTemplate,
+      noPlaylist: true,
+      noWarnings: true,
+      noPart: true,
+      retries: 3,
+    }),
+  );
 
   const files = (await fs.readdir(config.tmpDir)).filter((f) => f.startsWith(`${videoId}.`));
   if (files.length === 0) {
