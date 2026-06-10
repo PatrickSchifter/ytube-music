@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button, Spinner } from "@ytune/ui";
 import { useMix, useSearch } from "../hooks/useSearch";
 import { usePlayerStore } from "../store/playerStore";
@@ -12,16 +12,11 @@ export function SearchPage() {
   const [tab, setTab] = useState<Tab>("results");
 
   const currentTrack = usePlayerStore((s) => s.currentTrack);
-  const setMix = usePlayerStore((s) => s.setMix);
   const addMixToQueue = usePlayerStore((s) => s.addMixToQueue);
 
   const search = useSearch(query);
+  // Apenas exibição da aba "Mix"; o autoplay é alimentado por useRadio (App).
   const mix = useMix(currentTrack?.id ?? null);
-
-  // Alimenta o store com o mix carregado (usado pelo autoplay quando a fila esgota).
-  useEffect(() => {
-    if (mix.data) setMix(mix.data.results);
-  }, [mix.data, setMix]);
 
   return (
     <div className="flex flex-col gap-4">

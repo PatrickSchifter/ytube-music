@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { usePlayer } from "./hooks/usePlayer";
 import { usePrefetch } from "./hooks/usePrefetch";
+import { useRadio } from "./hooks/useRadio";
 import { useMediaSession } from "./hooks/useMediaSession";
 import { usePlayerStore } from "./store/playerStore";
 import { PlayerBar } from "./components/PlayerBar";
@@ -23,6 +24,7 @@ export function App() {
   // Wiring central do player (uma única vez).
   usePlayer();
   usePrefetch();
+  useRadio();
   useMediaSession();
 
   return (
