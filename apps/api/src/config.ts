@@ -25,6 +25,13 @@ export const config = {
   /** Caminho do binário yt-dlp. Default resolve via PATH. */
   ytDlpPath: process.env.YT_DLP_PATH ?? "yt-dlp",
   /**
+   * Componentes remotos (EJS) que o yt-dlp moderno usa para resolver os
+   * desafios JS do player do YouTube (signature/n-challenge). Sem isso, cai em
+   * clients que disparam "Sign in to confirm you're not a bot". Requer o `deno`
+   * no PATH. Defina vazio para desativar.
+   */
+  ytDlpRemoteComponents: process.env.YT_DLP_REMOTE_COMPONENTS ?? "ejs:github",
+  /**
    * Arquivo de cookies (formato Netscape) para autenticar no YouTube.
    * Necessário quando o servidor roda em IP de datacenter — o YouTube exige
    * "Sign in to confirm you're not a bot". Opcional em IP residencial.

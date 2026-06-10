@@ -20,13 +20,20 @@ const ytdlpExec = create(config.ytDlpPath);
 
 type YtFlags = Record<string, unknown>;
 
-/** Acrescenta o arquivo de cookies às flags, quando configurado. */
-function withCookies(flags: YtFlags): YtFlags {
-  return config.cookiesFile ? { ...flags, cookies: config.cookiesFile } : flags;
+/**
+ * Acrescenta flags comuns a toda chamada do yt-dlp:
+ * - remoteComponents (EJS) → resolve os desafios JS do YouTube via deno
+ * - cookies → autenticação quando configurada (IP de datacenter)
+ */
+function baseFlags(flags: YtFlags): YtFlags {
+  const merged: YtFlags = { ...flags };
+  if (config.ytDlpRemoteComponents) merged.remoteComponents = config.ytDlpRemoteComponents;
+  if (config.cookiesFile) merged.cookies = config.cookiesFile;
+  return merged;
 }
 
 async function raw(url: string, flags: YtFlags): Promise<string> {
-  const res = (await ytdlpExec(url, withCookies(flags))) as unknown;
+  const res = (await ytdlpExec(url, baseFlags(flags))) as unknown;
   if (typeof res === "string") return res;
   if (res && typeof res === "object" && "stdout" in res) {
     return String((res as { stdout: unknown }).stdout ?? "");
@@ -128,7 +135,7 @@ export async function downloadToTemp(videoId: string, format: string): Promise<s
   const outputTemplate = path.join(config.tmpDir, `${videoId}.%(ext)s`);
   await ytdlpExec(
     watchUrl(videoId),
-    withCookies({
+    baseFlags({
       format,
       output: outputTemplate,
       noPlaylist: true,

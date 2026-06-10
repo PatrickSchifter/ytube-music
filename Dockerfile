@@ -7,11 +7,16 @@ ENV PNPM_HOME=/pnpm
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
 
-# ---- Dependências de sistema (runtime): ffmpeg + yt-dlp ----
+# ---- Dependências de sistema (runtime): ffmpeg + yt-dlp + deno ----
 RUN apt-get update \
   && apt-get install -y --no-install-recommends ffmpeg python3 python3-pip tini ca-certificates \
   && pip3 install --no-cache-dir --break-system-packages yt-dlp \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Runtime JS exigido pelo yt-dlp moderno (resolve desafios do player do YouTube
+# e evita o fallback que dispara "confirm you're not a bot"). Imagem oficial,
+# multi-arch. O yt-dlp detecta o `deno` automaticamente pelo PATH.
+COPY --from=denoland/deno:bin /deno /usr/local/bin/deno
 
 # ---- Build do monorepo ----
 FROM base AS build

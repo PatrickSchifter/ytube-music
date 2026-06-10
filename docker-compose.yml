@@ -22,7 +22,9 @@ services:
     volumes:
       - ytune-cache:/data/cache
     ports:
-      - "3001:3001"
+      # Única porta exposta: front + API (mesma origem). Aponte o ngrok aqui:
+      #   ngrok http 9173
+      - "9173:3001"
     depends_on:
       redis:
         condition: service_healthy
