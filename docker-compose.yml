@@ -10,6 +10,12 @@ services:
       SERVE_WEB: "true"
       WEB_DIST: /app/apps/web/dist
       CACHE_DIR: /data/cache
+      # Aponte para o Redis. Default: o serviço `redis` deste compose.
+      # Para usar o Redis já existente na sua instância, troque a URL.
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      # TTL do cache (7 dias) e intervalo do job de limpeza (1h) — opcionais.
+      # CACHE_TTL_MS: 604800000
+      # CLEANUP_INTERVAL_MS: 3600000
       # Origem do CORS — com PWA na mesma origem não é necessário, mas deixe
       # configurável caso sirva o frontend de outro domínio.
       # CORS_ORIGIN: https://ytune.seu-dominio.com
@@ -17,6 +23,22 @@ services:
       - ytune-cache:/data/cache
     ports:
       - "3001:3001"
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  redis:
+    image: redis:7-alpine
+    container_name: ytune-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - ytune-redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
 
   # HTTPS + domínio de graça, sem abrir portas no roteador.
   # Crie um tunnel em https://one.dash.cloudflare.com (Zero Trust → Tunnels),
@@ -36,3 +58,4 @@ services:
 
 volumes:
   ytune-cache:
+  ytune-redis:

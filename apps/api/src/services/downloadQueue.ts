@@ -16,8 +16,11 @@ export async function enqueue(videoId: string): Promise<DownloadStatus> {
     return "done";
   }
 
+  // Só desvia se há um download em andamento. Um "done" obsoleto (arquivo
+  // removido pelo job de limpeza ou DELETE) NÃO bloqueia o re-download —
+  // já sabemos que não está em cache pelo check acima.
   const existing = state.get(videoId);
-  if (existing === "downloading" || existing === "done") return existing;
+  if (existing === "downloading") return existing;
 
   state.set(videoId, "downloading");
   const task = downloadAudio(videoId)

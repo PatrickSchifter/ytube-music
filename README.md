@@ -18,6 +18,7 @@ Monorepo full-stack em Node.js para **buscar vídeos do YouTube, extrair o áudi
 - **Pipeline audio-first em cascata**: áudio puro → vídeo mínimo (áudio extraído com `-vn`) → pior formato. Sempre o menor volume de dados.
 - **Prefetch**: aos 80% da faixa atual, a próxima já começa a baixar em background.
 - **YouTube Mix**: fila automática de relacionados, sem montar a fila à mão.
+- **Cache inteligente (Redis)**: metadados em Hash `audio:{id}` + ZSet `audio:lru` (score = último play). Um job interno (a cada 1h) remove faixas não ouvidas há mais de 7 dias — TTL por LRU, sem `EXPIRE` nativo.
 
 ## Estrutura (Turborepo)
 
@@ -36,6 +37,7 @@ packages/
 - **Node.js 20+** e **pnpm 9+**
 - **ffmpeg** no PATH — `brew install ffmpeg`
 - **yt-dlp** no PATH — `brew install yt-dlp` (recomendado; o pacote `yt-dlp-exec` também baixa um binário próprio na instalação)
+- **Redis** acessível (cache de metadados) — em dev: `docker run -d -p 6379:6379 redis:7-alpine`. Configurável via `REDIS_URL` (default `redis://127.0.0.1:6379`)
 
 ## Como rodar
 

@@ -29,6 +29,13 @@ export const config = {
   serveWeb: process.env.SERVE_WEB === "true",
   /** Diretório do build do frontend (apps/web/dist). */
   webDist: path.resolve(process.env.WEB_DIST ?? path.join(cwd, "..", "web", "dist")),
+
+  /** Conexão com o Redis (cache inteligente de metadados + LRU). */
+  redisUrl: process.env.REDIS_URL ?? "redis://127.0.0.1:6379",
+  /** TTL do cache: faixas não ouvidas por mais que isso são removidas pelo job. */
+  cacheTtlMs: Number(process.env.CACHE_TTL_MS ?? 7 * 24 * 60 * 60 * 1000),
+  /** Intervalo entre execuções do job de limpeza. */
+  cleanupIntervalMs: Number(process.env.CLEANUP_INTERVAL_MS ?? 60 * 60 * 1000),
 } as const;
 
 /** Constrói a URL canônica de um vídeo do YouTube a partir do id. */

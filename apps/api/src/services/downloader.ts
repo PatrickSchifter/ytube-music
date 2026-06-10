@@ -1,8 +1,9 @@
 import { promises as fs } from "node:fs";
 import type { DownloadLevel } from "@ytune/types";
 import { convertToMp3 } from "../lib/ffmpeg.js";
-import { downloadToTemp, cleanupTemp } from "../lib/ytdlp.js";
+import { downloadToTemp, cleanupTemp, getVideoInfo } from "../lib/ytdlp.js";
 import { cachePath, ensureCacheDir, isCached, cachedSize } from "./cache.js";
+import { recordCached } from "./audioMeta.js";
 
 /**
  * Estratégia audio-first: tenta sempre baixar o menor volume de dados possível,
@@ -62,6 +63,21 @@ export async function downloadAudio(videoId: string): Promise<DownloadResult> {
       const size = (await cachedSize(videoId)) ?? 0;
       lastLevel.set(videoId, level);
       console.log(`[downloader] ${videoId} → nível "${level}" (${(size / 1_048_576).toFixed(1)} MB)`);
+
+      // Registra os metadados no Redis (Hash + ZSet LRU). Falha aqui não deve
+      // quebrar o download/stream — apenas registra um aviso.
+      try {
+        const info = await getVideoInfo(videoId);
+        await recordCached(videoId, {
+          title: info?.title ?? videoId,
+          channel: info?.channel ?? "Desconhecido",
+          sizeBytes: size,
+          downloadLevel: level,
+        });
+      } catch (metaErr) {
+        console.warn(`[downloader] metadados Redis falharam para ${videoId}: ${(metaErr as Error).message}`);
+      }
+
       return { path: outPath, level, sizeBytes: size, fromCache: false };
     } catch (err) {
       lastError = err;

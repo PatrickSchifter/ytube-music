@@ -41,12 +41,15 @@ export function CachePage() {
         <ul className="flex flex-col divide-y divide-white/5">
           {data.entries.map((entry) => (
             <li key={entry.videoId} className="flex items-center gap-3 py-2">
-              <code className="flex-1 truncate text-sm text-zinc-200">{entry.videoId}</code>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm text-zinc-200">{entry.title || entry.videoId}</p>
+                <p className="truncate text-xs text-zinc-500">
+                  {entry.channel ? `${entry.channel} · ` : ""}ouvida{" "}
+                  {new Date(entry.lastListenedAt).toLocaleDateString("pt-BR")}
+                </p>
+              </div>
               <span className="text-xs tabular-nums text-zinc-500">
                 {formatBytes(entry.sizeBytes)}
-              </span>
-              <span className="hidden text-xs text-zinc-600 sm:inline">
-                {new Date(entry.createdAt).toLocaleDateString("pt-BR")}
               </span>
               <Button variant="ghost" onClick={() => remove(entry.videoId)} className="text-xs">
                 Remover

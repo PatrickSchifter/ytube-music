@@ -3,6 +3,7 @@ import { z } from "zod";
 import { cachePath, isCached } from "../services/cache.js";
 import { enqueue, waitFor } from "../services/downloadQueue.js";
 import { streamAudio } from "../services/streamer.js";
+import { touchListened } from "../services/audioMeta.js";
 
 const params = z.object({ videoId: z.string().min(1) });
 
@@ -31,6 +32,14 @@ export async function streamRoutes(app: FastifyInstance): Promise<void> {
           message: `Não foi possível obter o áudio de ${videoId}`,
         });
       }
+    }
+
+    // A cada play, marca a faixa como ouvida agora (atualiza LRU). Resiliente a
+    // falhas de Redis para não impactar o streaming.
+    try {
+      await touchListened(videoId);
+    } catch (err) {
+      app.log.warn(`touchListened falhou para ${videoId}: ${(err as Error).message}`);
     }
 
     // Assume controle da resposta para fazer pipe direto no ServerResponse nativo.

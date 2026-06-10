@@ -10,6 +10,7 @@ import { infoRoutes } from "./routes/info.js";
 import { streamRoutes } from "./routes/stream.js";
 import { downloadRoutes } from "./routes/download.js";
 import { cacheRoutes } from "./routes/cache.js";
+import { startCleanupJob } from "./services/cleanupJob.js";
 
 async function bootstrap(): Promise<void> {
   await ensureCacheDir();
@@ -70,6 +71,8 @@ async function bootstrap(): Promise<void> {
   try {
     await app.listen({ port: config.port, host: config.host });
     app.log.info(`YTune API ouvindo em http://localhost:${config.port}`);
+    // Job de limpeza do cache (LRU/TTL de 7 dias) — roda dentro do processo.
+    startCleanupJob();
   } catch (err) {
     app.log.error(err);
     process.exit(1);

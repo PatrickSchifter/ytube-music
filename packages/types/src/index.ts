@@ -45,11 +45,15 @@ export const DownloadStatusResponseSchema = z.object({
   status: DownloadStatusSchema,
 });
 
-/** Uma entrada do cache em disco. */
+/** Uma entrada do cache (metadados vindos do Redis). */
 export const CacheEntrySchema = z.object({
   videoId: z.string(),
+  title: z.string().optional(),
+  channel: z.string().optional(),
   sizeBytes: z.number(),
-  createdAt: z.string(), // ISO 8601
+  downloadLevel: DownloadLevelSchema.optional(),
+  cachedAt: z.number(), // timestamp ms
+  lastListenedAt: z.number(), // timestamp ms
 });
 
 export const CacheListResponseSchema = z.object({

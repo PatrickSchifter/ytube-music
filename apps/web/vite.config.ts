@@ -64,6 +64,9 @@ export default defineConfig({
   ],
   server: {
     port: 5173,
+    // Libera acesso via túnel de dev (ngrok, Cloudflare, etc.).
+    // `true` aceita qualquer host — ok num túnel pessoal e temporário.
+    allowedHosts: true,
     proxy: {
       // Encaminha chamadas à API durante o dev (rotas já vivem sob /api no backend).
       "/api": {
