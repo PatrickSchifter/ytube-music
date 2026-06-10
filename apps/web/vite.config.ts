@@ -65,11 +65,10 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      // Encaminha chamadas à API durante o dev, evitando configurar CORS/URL.
+      // Encaminha chamadas à API durante o dev (rotas já vivem sob /api no backend).
       "/api": {
         target: "http://localhost:3001",
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ""),
       },
     },
   },

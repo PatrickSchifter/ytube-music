@@ -1,0 +1,38 @@
+services:
+  app:
+    build: .
+    image: ytune
+    container_name: ytune
+    restart: unless-stopped
+    environment:
+      PORT: 3001
+      HOST: 0.0.0.0
+      SERVE_WEB: "true"
+      WEB_DIST: /app/apps/web/dist
+      CACHE_DIR: /data/cache
+      # Origem do CORS — com PWA na mesma origem não é necessário, mas deixe
+      # configurável caso sirva o frontend de outro domínio.
+      # CORS_ORIGIN: https://ytune.seu-dominio.com
+    volumes:
+      - ytune-cache:/data/cache
+    ports:
+      - "3001:3001"
+
+  # HTTPS + domínio de graça, sem abrir portas no roteador.
+  # Crie um tunnel em https://one.dash.cloudflare.com (Zero Trust → Tunnels),
+  # aponte o hostname público para http://app:3001 e cole o token abaixo
+  # (ou em um arquivo .env como TUNNEL_TOKEN=...). Suba com:
+  #   docker compose --profile tunnel up -d
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: ytune-tunnel
+    restart: unless-stopped
+    command: tunnel run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
+    depends_on:
+      - app
+    profiles: ["tunnel"]
+
+volumes:
+  ytune-cache:

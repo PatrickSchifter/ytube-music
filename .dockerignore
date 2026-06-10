@@ -1,0 +1,13 @@
+**/node_modules
+**/dist
+**/dev-dist
+**/.turbo
+**/cache/*
+!**/cache/.gitkeep
+.git
+.gitignore
+*.log
+**/.env
+**/.env.*
+!**/.env.example
+README.md

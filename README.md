@@ -76,6 +76,41 @@ pnpm typecheck
 
 Em dev o Service Worker fica desativado. Após `pnpm --filter=@ytune/web build && pnpm --filter=@ytune/web preview`, acesse pelo Chrome/Edge e use o ícone de instalação na barra de endereço (no Safari mobile: Compartilhar → Adicionar à Tela de Início).
 
+## Deploy (servidor próprio, ouvir no celular)
+
+A API serve o PWA na **mesma origem** em produção (`SERVE_WEB=true`) — uma URL só, sem CORS. Tudo roda em **um container Docker** que já traz `ffmpeg` e `yt-dlp` (via pip, multi-arch x86/ARM). O host só precisa de Docker.
+
+```bash
+docker compose up -d --build      # builda e sobe em http://localhost:3001
+```
+
+O cache de áudio fica no volume `ytune-cache` (não re-baixa o que já foi ouvido).
+
+### HTTPS + domínio de graça (Cloudflare Tunnel)
+
+O PWA só **instala no iPhone/Android via HTTPS**. A forma mais simples e gratuita, sem abrir portas no roteador:
+
+1. Em [Cloudflare Zero Trust → Tunnels](https://one.dash.cloudflare.com), crie um tunnel e um hostname público apontando para `http://app:3001`.
+2. Copie o token para um arquivo `.env` na raiz: `TUNNEL_TOKEN=...`
+3. Suba com o profile do tunnel:
+
+```bash
+docker compose --profile tunnel up -d --build
+```
+
+Pronto: `https://ytune.seu-dominio.com` acessível de qualquer lugar, com cadeado válido e instalável como app.
+
+### ⚠️ Importante: YouTube x IP de datacenter
+
+O YouTube frequentemente exige verificação anti-bot ("Sign in to confirm you're not a bot") para `yt-dlp` rodando em **IPs de datacenter** (a maioria dos clouds/PaaS gratuitos). Por isso:
+
+- **Mais confiável e grátis:** rodar em **máquina em casa** (Raspberry Pi, mini-PC, notebook velho) — IP residencial que o YouTube confia — exposta via Cloudflare Tunnel.
+- Em VPS/cloud, se cair em verificação, exporte cookies do navegador e monte-os no container, passando `--cookies` ao yt-dlp (configurável via flags do downloader).
+
+### Manter o yt-dlp atualizado
+
+O YouTube muda com frequência e quebra o `yt-dlp`. Para atualizar, rebuilde a imagem (`docker compose build --no-cache app`) ou, dentro do container, `pip3 install -U --break-system-packages yt-dlp`.
+
 ## Licença
 
 Projeto pessoal, sem distribuição.

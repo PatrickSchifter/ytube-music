@@ -24,6 +24,11 @@ export const config = {
 
   /** Caminho do binário yt-dlp. Default resolve via PATH. */
   ytDlpPath: process.env.YT_DLP_PATH ?? "yt-dlp",
+
+  /** Em produção, a API também serve o PWA buildado (mesma origem). */
+  serveWeb: process.env.SERVE_WEB === "true",
+  /** Diretório do build do frontend (apps/web/dist). */
+  webDist: path.resolve(process.env.WEB_DIST ?? path.join(cwd, "..", "web", "dist")),
 } as const;
 
 /** Constrói a URL canônica de um vídeo do YouTube a partir do id. */
