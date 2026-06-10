@@ -8,6 +8,8 @@ interface PlayerState {
   currentTrack: Video | null;
   queue: Video[];
   mix: Video[];
+  /** Faixa que semeou o rádio (mix) atual. Só muda em play explícito ou re-semeadura. */
+  mixSeedId: string | null;
   history: Video[];
   isPlaying: boolean;
   volume: number; // 0–1
@@ -30,7 +32,8 @@ interface PlayerState {
   removeFromQueue: (id: string) => void;
   reorderQueue: (from: number, to: number) => void;
   clearQueue: () => void;
-  setMix: (tracks: Video[]) => void;
+  /** Acrescenta faixas ao mix, deduplicando contra atual/histórico/fila/mix. */
+  appendMix: (tracks: Video[]) => void;
   setVolume: (v: number) => void;
   cycleRepeat: () => void;
   toggleShuffle: () => void;
@@ -49,6 +52,7 @@ export const usePlayerStore = create<PlayerState>()(
       currentTrack: null,
       queue: [],
       mix: [],
+      mixSeedId: null,
       history: [],
       isPlaying: false,
       volume: 1,
@@ -76,6 +80,9 @@ export const usePlayerStore = create<PlayerState>()(
           history: newHistory,
           // Se a faixa veio da fila, remove-a de lá.
           queue: without(get().queue, track.id),
+          // Play explícito = novo rádio: semeia por esta faixa e descarta o mix antigo.
+          mixSeedId: track.id,
+          mix: [],
         });
       },
 
@@ -102,16 +109,27 @@ export const usePlayerStore = create<PlayerState>()(
             restQueue = queue.slice(1);
           }
         } else if (mix.length > 0) {
-          // Fila esgotou: puxa do mix automático.
-          const idx = shuffle ? Math.floor(Math.random() * mix.length) : 0;
-          nextTrack = mix[idx];
-          restMix = mix.filter((_, i) => i !== idx);
+          // Fila esgotou: puxa do mix automático, ignorando o que já tocou.
+          const seen = new Set<string>([
+            ...(currentTrack ? [currentTrack.id] : []),
+            ...history.map((v) => v.id),
+          ]);
+          const fresh = mix.filter((v) => !seen.has(v.id));
+          const pool = fresh.length > 0 ? fresh : mix;
+          const pick = shuffle ? pool[Math.floor(Math.random() * pool.length)]! : pool[0]!;
+          nextTrack = pick;
+          restMix = mix.filter((v) => v.id !== pick.id);
         }
 
         if (!nextTrack) {
           set({ isPlaying: false });
           return;
         }
+
+        // Mantém o rádio fluindo: quando o mix está acabando, re-semeia pela faixa
+        // atual para buscar uma continuação (o dedup no append evita repetição).
+        const reseed =
+          restQueue.length === 0 && restMix.length <= 1 ? { mixSeedId: nextTrack.id } : {};
 
         set({
           currentTrack: nextTrack,
@@ -121,6 +139,7 @@ export const usePlayerStore = create<PlayerState>()(
           currentTime: 0,
           duration: 0,
           history: currentTrack ? [currentTrack, ...history].slice(0, 100) : history,
+          ...reseed,
         });
       },
 
@@ -200,7 +219,18 @@ export const usePlayerStore = create<PlayerState>()(
 
       clearQueue: () => set({ queue: [] }),
 
-      setMix: (tracks) => set({ mix: tracks }),
+      appendMix: (tracks) => {
+        const { currentTrack, history, queue, mix } = get();
+        const seen = new Set<string>([
+          ...(currentTrack ? [currentTrack.id] : []),
+          ...history.map((v) => v.id),
+          ...queue.map((v) => v.id),
+          ...mix.map((v) => v.id),
+        ]);
+        const additions = tracks.filter((v) => !seen.has(v.id));
+        if (additions.length === 0) return;
+        set({ mix: [...mix, ...additions] });
+      },
 
       setVolume: (v) => set({ volume: Math.min(1, Math.max(0, v)) }),
 
